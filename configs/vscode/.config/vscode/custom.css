@@ -1,0 +1,70 @@
+/* Applied via be5invis.vscode-custom-css ("Enable Custom CSS and JS" command).
+   Makes the workbench chrome (sidebar, tabs, status bar, panels, dialogs,
+   chat, notifications, welcome page) match the editor/terminal font — VS
+   Code has no settings.json equivalent for this.
+   Note: macOS's native top menu bar is outside the app's DOM and can't be
+   restyled by any app, so it stays on the system font regardless. Content
+   inside a Shadow DOM (some dialog internals) is also unreachable — CSS
+   injection can't cross that boundary. */
+
+/* Components read a whole scattered set of typography-token CSS variables
+   (--vscode-font-size, --vscode-fontSize-body1, --vscode-chat-font-size-body-*,
+   etc.) instead of one central value. Override them directly too, since the
+   blanket rule below can't reach anything set via inline style with these
+   variables (e.g. line-height computed from a variable at render time). */
+:root {
+    --vscode-font-family: 'Fira Code', Menlo, monospace !important;
+    --monaco-monospace-font: 'Fira Code', Menlo, monospace !important;
+    --vscode-chat-font-family: 'Fira Code', Menlo, monospace !important;
+    --vscode-repl-font-family: 'Fira Code', Menlo, monospace !important;
+
+    --vscode-font-size: 16px !important;
+    --vscode-bodyFontSize: 16px !important;
+    --vscode-bodyFontSize-small: 16px !important;
+    --vscode-bodyFontSize-xSmall: 16px !important;
+    --vscode-fontSize-body1: 16px !important;
+    --vscode-fontSize-heading3: 16px !important;
+    --vscode-fontSize-label1: 16px !important;
+    --vscode-fontSize-label2: 16px !important;
+    --vscode-fontSize-label3: 16px !important;
+    --vscode-agents-fontSize-body1: 16px !important;
+    --vscode-agents-fontSize-body2: 16px !important;
+    --vscode-agents-fontSize-heading2: 16px !important;
+    --vscode-agents-fontSize-heading3: 16px !important;
+    --vscode-agents-fontSize-label1: 16px !important;
+    --vscode-agents-fontSize-label2: 16px !important;
+    --vscode-agents-fontSize-label3: 16px !important;
+    --vscode-chat-font-size-body-xs: 16px !important;
+    --vscode-chat-font-size-body-s: 16px !important;
+    --vscode-chat-font-size-body-m: 16px !important;
+    --vscode-chat-font-size-body-l: 16px !important;
+    --vscode-chat-font-size-body-xl: 16px !important;
+    --vscode-chat-font-size-body-xxl: 16px !important;
+    --vscode-repl-font-size: 16px !important;
+    --vscode-repl-font-size-for-twistie: 16px !important;
+}
+
+/* Blanket override: VS Code hardcodes literal px font-sizes on hundreds of
+   individual components (toolbars, tooltips, status bar, dialogs, chat,
+   welcome page, badges...) instead of using the variables above, so those
+   need direct overrides. Rather than chasing each one individually, force
+   everything at once, except:
+   - .codicon (icon glyphs — forcing their font-size breaks icon rendering)
+   - .monaco-editor and its contents (the code editing surface — Monaco's JS
+     computes precise per-character positioning from the configured font
+     metrics; overriding font-size here via CSS risks garbled/misaligned
+     text rather than just a size mismatch. editor.fontFamily/fontSize in
+     settings.json already correctly cover this area.)
+   - .xterm and its contents (the integrated terminal's character grid — same
+     precision-rendering risk as the editor. terminal.integrated.fontFamily/
+     fontSize in settings.json already correctly cover this area.)
+   This may cause overflow/clipping in some fixed-size badges, counters, or
+   compact rows sized for much smaller text — fix those spots individually
+   if/when they come up, rather than reverting the whole approach. */
+.monaco-workbench {
+    font-family: 'Fira Code', Menlo, monospace !important;
+    font-size: 16px !important;
+}
+.monaco-workbench *:not(.codicon):not(.monaco-editor):not(.monaco-editor *):not(.xterm):not(.xterm *) {
+    font-size: 16px !important;
+}

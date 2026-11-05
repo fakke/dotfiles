@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+current_session=$(tmux display-message -p '#S')
+current_window=$(tmux display-message -p '#W')
+current="$current_session/$current_window"
+
+new_name=$(echo "" | fzf --print-query --prompt="rename: " --query="$current" | head -1)
+[[ -z $new_name ]] && exit 0
+[[ $new_name == $current ]] && exit 0
+
+new_session=$(echo "$new_name" | cut -d/ -f1)
+new_window=$(echo "$new_name" | cut -d/ -f2)
+
+[[ $new_session != $current_session ]] && tmux rename-session "$new_session"
+[[ $new_window != $current_window ]] && tmux rename-window "$new_window"

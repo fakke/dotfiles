@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+[[ -f "$script_dir/../.env" ]] && source "$script_dir/../.env"
+
+host=$1
+
+ssh -t "$host" "bash -c '$TMUX_SSH_COMMAND'"
+
+exit_code=$?
+if [ $exit_code -eq 255 ] || [ $exit_code -eq 1 ]; then
+    echo '' >/dev/tty
+    echo "--- connection to $host failed (exit $exit_code) ---" >/dev/tty
+    read -n 1 -s -p "press any key to close" </dev/tty
+fi
+
+window_count=$(tmux list-windows -t ssh 2>/dev/null | wc -l)
+if [ "$window_count" -le 1 ]; then
+    tmux kill-session -t ssh
+else
+    tmux kill-window -t "ssh:$host"
+fi
+

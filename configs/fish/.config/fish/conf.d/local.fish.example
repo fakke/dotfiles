@@ -1,0 +1,10 @@
+set -gx EC2_REGION  "us-east-1"
+set -gx EC2_DEV     "i-XXX"
+set -gx EC2_VOL_DEV "vol-XXX"
+set -gx GH_ORG_CONFIG your-config-org
+set -gx GH_ORG_HOST github.com
+set -gx DATABRICKS_CONFIG_PROFILE your-profile
+set -gx DATABRICKS_CLUSTER_ID your-cluster-id
+set -gx DBX_VENV $HOME/.venvs/databricks
+alias db='databricks --profile "$DATABRICKS_CONFIG_PROFILE"'
+

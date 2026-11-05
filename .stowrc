@@ -1,0 +1,6 @@
+--dir=configs
+--target=~
+--verbose
+--no-folding
+--ignore=^setup$
+--ignore=\.DS_Store$

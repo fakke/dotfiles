@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# [[ -f .env ]] && source .env
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+[[ -f "$script_dir/../.env" ]] && source "$script_dir/../.env"
+
+ssh_hosts=( $TMUX_CONNECTIONS_SSH )
+
+# step 1: pick a project or host
+selected=$(
+    (
+        find $TMUX_PROJECTS_L1 -mindepth 1 -maxdepth 1 -type d 2>/dev/null
+        find $TMUX_PROJECTS_L0 -mindepth 0 -maxdepth 0 -type d 2>/dev/null
+        ((${#ssh_hosts[@]})) && printf '%s\n' "${ssh_hosts[@]}" | sed 's/^/ssh: /'
+    ) | sed "s|^$HOME/|~/|; s|^$HOME\$|~|" | fzf --prompt="open: "
+)
+[[ -z $selected ]] && exit 0
+selected=${selected/#\~/$HOME}
+
+# step 2: ssh branch
+if [[ $selected == ssh:* ]]; then
+    host=${selected#ssh: }
+
+    existing_window=$(tmux list-windows -t ssh -F '#{window_index} #{window_name}' 2>/dev/null \
+        | grep " $host$" | cut -d' ' -f1)
+
+    if [[ -n $existing_window ]]; then
+        pane_cmd=$(tmux display-message -t "ssh:$existing_window" -p '#{pane_current_command}')
+        tmux switch-client -t ssh
+        tmux select-window -t "ssh:$existing_window"
+        if [[ $pane_cmd != "ssh" ]]; then
+            tmux send-keys -t "ssh:$existing_window" "~/.config/tmux/scripts/connect-ssh $host" Enter
+        fi
+    elif ! tmux has-session -t=ssh 2>/dev/null; then
+        tmux new-session -ds ssh -n "$host"
+        tmux send-keys -t "ssh:$host" "~/.config/tmux/scripts/connect-ssh $host" Enter
+        tmux switch-client -t ssh
+    else
+        tmux new-window -t ssh -n "$host"
+        tmux send-keys -t "ssh:$host" "~/.config/tmux/scripts/connect-ssh $host" Enter
+        tmux switch-client -t ssh
+    fi
+    exit 0
+fi
+
+# step 3: local branch - check if already open anywhere
+default_name=$(basename "$selected" | tr . _)
+existing=$(tmux list-windows -a -F '#{session_name}:#{window_index} #{pane_current_path}' \
+    | grep " $selected$" | head -1 | cut -d' ' -f1)
+
+if [[ -n $existing ]]; then
+    session=$(echo "$existing" | cut -d: -f1)
+    window=$(echo "$existing" | cut -d: -f2)
+    tmux switch-client -t "$session"
+    tmux select-window -t "$session:$window"
+    exit 0
+fi
+
+# step 4: new session or existing?
+action=$(printf "new session\n%s" "$(tmux list-sessions -F '#{session_name}' 2>/dev/null)" | fzf --prompt="session: ")
+[[ -z $action ]] && exit 0
+
+if [[ $action == "new session" ]]; then
+    session_name=$(echo "$default_name" | fzf --prompt="name: " --print-query | head -1)
+    [[ -z $session_name ]] && session_name=$default_name
+    tmux new-session -ds "$session_name" -c "$selected" -n "$default_name" 2>/dev/null
+    tmux switch-client -t "$session_name"
+else
+    tmux new-window -t "$action" -c "$selected" -n "$default_name"
+    tmux switch-client -t "$action"
+fi

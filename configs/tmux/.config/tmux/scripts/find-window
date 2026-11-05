@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+selected=$(tmux list-windows -a -F '#{session_name}/#{window_name}' | \
+    fzf --prompt="window: ")
+[[ -z $selected ]] && exit 0
+
+session=$(echo "$selected" | cut -d/ -f1)
+window=$(echo "$selected" | cut -d/ -f2)
+
+tmux switch-client -t "$session"
+tmux select-window -t "$session:$window"

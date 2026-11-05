@@ -1,0 +1,5 @@
+^\.gitignore$
+\.DS_Store$
+^/\.config/tmux/\.env$
+^/\.config/tmux/plugins(/.*)?$
+^/\.config/tmux/resurrect(/.*)?$
